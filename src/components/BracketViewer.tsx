@@ -21,14 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Check, Flame, Shuffle, Trophy, Tv, Users } from 'lucide-react';
+import { Check, FileDown, Flame, Shuffle, Trophy, Tv, Users } from 'lucide-react';
 
 interface BracketViewerProps {
   onOpenUmpire: (matchId: string) => void;
   onOpenGenerateDraw: () => void;
+  onOpenExportPdf: () => void;
 }
 
-export function BracketViewer({ onOpenUmpire, onOpenGenerateDraw }: BracketViewerProps) {
+export function BracketViewer({
+  onOpenUmpire,
+  onOpenGenerateDraw,
+  onOpenExportPdf,
+}: BracketViewerProps) {
   const {
     tournament,
     selectedEventId,
@@ -110,6 +115,16 @@ export function BracketViewer({ onOpenUmpire, onOpenGenerateDraw }: BracketViewe
           >
             <Shuffle className="h-3.5 w-3.5" />
             Re-seed & Draw
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenExportPdf}
+            className="text-xs h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-xs"
+          >
+            <FileDown className="h-3.5 w-3.5" />
+            Export PDF
           </Button>
         </div>
       </div>

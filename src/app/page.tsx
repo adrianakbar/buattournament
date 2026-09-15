@@ -11,12 +11,14 @@ import { MatchList } from '@/components/MatchList';
 import { PlayersList } from '@/components/PlayersList';
 import { NewTournamentDialog } from '@/components/NewTournamentDialog';
 import { GenerateDrawDialog } from '@/components/GenerateDrawDialog';
+import { ExportPdfDialog } from '@/components/ExportPdfDialog';
 import { Toaster } from '@/components/ui/sonner';
 
 function TournamentAppContent() {
   const [currentTab, setCurrentTab] = useState<string>('overview');
   const [isNewTournamentOpen, setIsNewTournamentOpen] = useState<boolean>(false);
   const [isGenerateDrawOpen, setIsGenerateDrawOpen] = useState<boolean>(false);
+  const [isExportPdfOpen, setIsExportPdfOpen] = useState<boolean>(false);
 
   const { setUmpireMatchId } = useTournament();
 
@@ -48,6 +50,7 @@ function TournamentAppContent() {
           <BracketViewer
             onOpenUmpire={handleOpenUmpire}
             onOpenGenerateDraw={() => setIsGenerateDrawOpen(true)}
+            onOpenExportPdf={() => setIsExportPdfOpen(true)}
           />
         )}
 
@@ -87,6 +90,11 @@ function TournamentAppContent() {
       <GenerateDrawDialog
         open={isGenerateDrawOpen}
         onOpenChange={setIsGenerateDrawOpen}
+      />
+
+      <ExportPdfDialog
+        open={isExportPdfOpen}
+        onOpenChange={setIsExportPdfOpen}
       />
 
       <Toaster position="bottom-right" />
