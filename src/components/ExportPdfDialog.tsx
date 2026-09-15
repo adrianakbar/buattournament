@@ -49,13 +49,13 @@ export function ExportPdfDialog({ open, onOpenChange }: ExportPdfDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[92vh] flex flex-col p-6 overflow-hidden">
+      <DialogContent className="w-[96vw] max-w-5xl max-h-[92vh] flex flex-col p-4 sm:p-6 overflow-hidden">
         <DialogHeader className="pb-2 border-b">
-          <div className="flex items-center justify-between pr-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-6">
             <div>
-              <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-                <FileText className="h-5 w-5 text-emerald-600" />
-                Export Official BWF Draw Sheet to PDF
+              <DialogTitle className="flex items-center gap-2 text-base md:text-lg font-bold">
+                <FileText className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 shrink-0" />
+                Export Official BWF Draw Sheet
               </DialogTitle>
               <DialogDescription className="text-xs">
                 {tournament.name} • {activeEvent.name} ({activeEvent.bracketSize} Draw)
@@ -81,7 +81,7 @@ export function ExportPdfDialog({ open, onOpenChange }: ExportPdfDialogProps) {
                 {isExporting ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Generating PDF...
+                    Saving PDF...
                   </>
                 ) : (
                   <>
@@ -95,13 +95,18 @@ export function ExportPdfDialog({ open, onOpenChange }: ExportPdfDialogProps) {
         </DialogHeader>
 
         {/* Scrollable Preview Area */}
-        <div className="flex-grow overflow-auto p-4 bg-muted/40 rounded-lg border my-2 flex justify-center items-start">
-          <div className="shadow-lg rounded-md overflow-hidden bg-white scale-[0.85] origin-top">
-            <PrintableBracketSheet
-              ref={printSheetRef}
-              tournament={tournament}
-              event={activeEvent}
-            />
+        <div className="flex-grow overflow-auto p-2 sm:p-4 bg-muted/40 rounded-lg border my-2 flex flex-col items-center">
+          <p className="text-[10px] text-muted-foreground mb-2 sm:hidden text-center">
+            Pinch or scroll horizontally to inspect the full A4 landscape bracket sheet.
+          </p>
+          <div className="overflow-x-auto w-full flex justify-center no-scrollbar">
+            <div className="shadow-lg rounded-md overflow-hidden bg-white scale-[0.65] xs:scale-[0.75] md:scale-[0.85] origin-top my-1">
+              <PrintableBracketSheet
+                ref={printSheetRef}
+                tournament={tournament}
+                event={activeEvent}
+              />
+            </div>
           </div>
         </div>
       </DialogContent>

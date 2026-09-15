@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Trophy } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 
 export function PlayersList() {
   const { tournament } = useTournament();
@@ -55,20 +56,20 @@ export function PlayersList() {
   return (
     <div className="space-y-4">
       {/* Search & Category Filter */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-4 rounded-xl border shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-card p-3 md:p-4 rounded-xl border shadow-xs">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Search athlete or club..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 text-xs h-9"
+            className="pl-9 text-xs h-8 md:h-9"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Select value={categoryFilter} onValueChange={(v: string | null) => setCategoryFilter(v || 'all')}>
-            <SelectTrigger className="h-9 w-[150px] text-xs">
+            <SelectTrigger className="h-8 md:h-9 w-full sm:w-[150px] text-[11px] md:text-xs">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -83,8 +84,59 @@ export function PlayersList() {
         </div>
       </div>
 
-      {/* Players Table */}
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      {/* MOBILE VIEW: Cards (Block on mobile) */}
+      <div className="block md:hidden space-y-2">
+        {filteredEntries.length > 0 ? (
+          filteredEntries.map((entry) => (
+            <Card key={entry.id} className="border shadow-2xs text-xs">
+              <CardContent className="p-3 flex items-center justify-between gap-2">
+                <div className="space-y-0.5 truncate">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {entry.seed && (
+                      <span className="font-bold text-[9px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                        Seed #{entry.seed}
+                      </span>
+                    )}
+                    <span className="font-semibold text-foreground text-[12px] truncate">
+                      {entry.player2 ? (
+                        <>
+                          {entry.player1.name} / {entry.player2.name}
+                        </>
+                      ) : (
+                        entry.player1.name
+                      )}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    {entry.player2
+                      ? `${entry.player1.club} / ${entry.player2.club}`
+                      : entry.player1.club}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <Badge variant="secondary" className="text-[9px] font-bold">
+                    {entry.eventCategory}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-emerald-700 bg-emerald-50 border-emerald-200 text-[9px] py-0 h-4"
+                  >
+                    Active
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center py-8 text-muted-foreground bg-card rounded-xl border text-xs">
+            No players found.
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP VIEW: Data Table (Hidden on mobile) */}
+      <div className="hidden md:block rounded-xl border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-muted/40 text-xs">
             <TableRow>

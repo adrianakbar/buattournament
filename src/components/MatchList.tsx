@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Flame, Search, Tv } from 'lucide-react';
+import { Flame, Search } from 'lucide-react';
 
 interface MatchListProps {
   onOpenUmpire: (matchId: string) => void;
@@ -68,19 +69,19 @@ export function MatchList({ onOpenUmpire }: MatchListProps) {
     switch (status) {
       case 'live':
         return (
-          <Badge variant="destructive" className="animate-pulse text-[10px] font-bold">
+          <Badge variant="destructive" className="animate-pulse text-[9px] md:text-[10px] font-bold">
             LIVE
           </Badge>
         );
       case 'finished':
         return (
-          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 text-[10px]">
+          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 text-[9px] md:text-[10px]">
             FINISHED
           </Badge>
         );
       case 'upcoming':
         return (
-          <Badge variant="outline" className="text-[10px]">
+          <Badge variant="outline" className="text-[9px] md:text-[10px]">
             UPCOMING
           </Badge>
         );
@@ -91,22 +92,22 @@ export function MatchList({ onOpenUmpire }: MatchListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Search & Filters */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-card p-4 rounded-xl border shadow-sm">
+      {/* Search & Filter Controls */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-2.5 bg-card p-3 md:p-4 rounded-xl border shadow-xs">
         <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Search player, club, or match #..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 text-xs h-9"
+            className="pl-9 text-xs h-8 md:h-9"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+        <div className="grid grid-cols-3 gap-1.5 w-full md:w-auto md:flex md:items-center">
           {/* Category Filter */}
           <Select value={categoryFilter} onValueChange={(v: string | null) => setCategoryFilter(v || 'all')}>
-            <SelectTrigger className="h-9 w-[120px] text-xs">
+            <SelectTrigger className="h-8 md:h-9 text-[11px] md:text-xs">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -121,7 +122,7 @@ export function MatchList({ onOpenUmpire }: MatchListProps) {
 
           {/* Court Filter */}
           <Select value={courtFilter} onValueChange={(v: string | null) => setCourtFilter(v || 'all')}>
-            <SelectTrigger className="h-9 w-[120px] text-xs">
+            <SelectTrigger className="h-8 md:h-9 text-[11px] md:text-xs">
               <SelectValue placeholder="Court" />
             </SelectTrigger>
             <SelectContent>
@@ -137,7 +138,7 @@ export function MatchList({ onOpenUmpire }: MatchListProps) {
 
           {/* Status Filter */}
           <Select value={statusFilter} onValueChange={(v: string | null) => setStatusFilter(v || 'all')}>
-            <SelectTrigger className="h-9 w-[120px] text-xs">
+            <SelectTrigger className="h-8 md:h-9 text-[11px] md:text-xs">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -150,8 +151,107 @@ export function MatchList({ onOpenUmpire }: MatchListProps) {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      {/* MOBILE VIEW: Touch-Friendly Match Cards (Block on mobile) */}
+      <div className="block md:hidden space-y-2.5">
+        {filteredMatches.length > 0 ? (
+          filteredMatches.map((m) => {
+            const p1 = m.entry1?.player2
+              ? `${m.entry1.player1.name} / ${m.entry1.player2.name}`
+              : m.entry1?.player1.name || 'TBD';
+
+            const p2 = m.entry2?.player2
+              ? `${m.entry2.player1.name} / ${m.entry2.player2.name}`
+              : m.entry2?.player1.name || 'TBD';
+
+            const p1Won = m.status === 'finished' && m.winnerId === m.entry1?.id;
+            const p2Won = m.status === 'finished' && m.winnerId === m.entry2?.id;
+
+            return (
+              <Card key={m.id} className="border shadow-2xs overflow-hidden text-xs">
+                <div className="bg-muted/40 px-3 py-1.5 border-b flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-foreground">M#{m.matchNumber}</span>
+                    <Badge variant="outline" className="text-[9px] py-0 h-4 font-bold">
+                      {m.category}
+                    </Badge>
+                    {m.courtNumber ? (
+                      <span className="text-[10px] text-emerald-700 font-medium">
+                        Court {m.courtNumber}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground italic">No Court</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {getStatusBadge(m.status)}
+                  </div>
+                </div>
+
+                <CardContent className="p-3 space-y-2">
+                  <div className="space-y-1">
+                    {/* Player 1 */}
+                    <div className="flex items-center justify-between">
+                      <div className="truncate max-w-[200px]">
+                        <span className={p1Won ? 'font-bold text-emerald-700' : 'font-medium'}>
+                          {p1}
+                        </span>
+                        {m.entry1?.player1.club && (
+                          <span className="block text-[10px] text-muted-foreground truncate">
+                            {m.entry1.player1.club}
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-mono font-bold text-xs">
+                        {m.score.games.map((g) => g.p1).join('-')}
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-muted-foreground font-semibold">vs</div>
+
+                    {/* Player 2 */}
+                    <div className="flex items-center justify-between">
+                      <div className="truncate max-w-[200px]">
+                        <span className={p2Won ? 'font-bold text-emerald-700' : 'font-medium'}>
+                          {p2}
+                        </span>
+                        {m.entry2?.player1.club && (
+                          <span className="block text-[10px] text-muted-foreground truncate">
+                            {m.entry2.player1.club}
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-mono font-bold text-xs">
+                        {m.score.games.map((g) => g.p2).join('-')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions & Round Info */}
+                  <div className="flex items-center justify-between pt-2 border-t text-[11px]">
+                    <span className="text-muted-foreground">{m.roundName}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onOpenUmpire(m.id)}
+                      className="h-7 text-xs gap-1 text-emerald-700 hover:bg-emerald-50 border-emerald-300"
+                    >
+                      <Flame className="h-3 w-3 text-amber-500" />
+                      Scorekeeper
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground bg-card rounded-xl border text-xs">
+            No matches match filter.
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP VIEW: Full Data Table (Hidden on mobile) */}
+      <div className="hidden md:block rounded-xl border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-muted/40 text-xs">
             <TableRow>

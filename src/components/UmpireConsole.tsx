@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTournament } from '@/lib/tournament-store';
 import { checkGameStatus, checkMatchStatus } from '@/lib/badminton-rules';
 import { Button } from '@/components/ui/button';
@@ -18,11 +18,9 @@ import {
   Trophy,
   Flame,
   ArrowLeft,
-  Tv,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
   Sparkles,
+  Rows,
+  Columns,
 } from 'lucide-react';
 
 interface UmpireConsoleProps {
@@ -40,20 +38,21 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
     setMatchServer,
   } = useTournament();
 
+  const [mobileLayout, setMobileLayout] = useState<'stack' | 'grid'>('stack');
+
   const allMatches = tournament.events.flatMap((e) =>
     e.matches.map((m) => ({ ...m, category: e.category, eventName: e.name }))
   );
 
-  // If no match selected, show a selector
   if (!umpireMatch) {
     return (
-      <Card className="max-w-2xl mx-auto my-8 border shadow-sm text-center p-8 space-y-6">
+      <Card className="max-w-2xl mx-auto my-4 md:my-8 border shadow-sm text-center p-5 md:p-8 space-y-5">
         <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
           <Flame className="h-6 w-6" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-xl font-bold tracking-tight">Electronic Umpire Console</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-lg md:text-xl font-bold tracking-tight">Electronic Umpire Console</h2>
+          <p className="text-xs md:text-sm text-muted-foreground">
             Select a match to start scoring with official BWF 3x21 rally point rules.
           </p>
         </div>
@@ -107,36 +106,54 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
 
   const server = umpireMatch.score.currentServer || 1;
   const serverScore = server === 1 ? currentGame.p1 : currentGame.p2;
-  const serviceCourt = serverScore % 2 === 0 ? 'Right Service Box (Even)' : 'Left Service Box (Odd)';
+  const serviceCourt = serverScore % 2 === 0 ? 'Right Box (Even)' : 'Left Box (Odd)';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="max-w-4xl mx-auto space-y-3 md:space-y-4">
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between bg-card p-3 rounded-xl border shadow-sm">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBackToDraws} className="h-8 gap-1 text-xs">
-            <ArrowLeft className="h-3.5 w-3.5" /> Bracket
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-card p-3 rounded-xl border shadow-xs gap-2">
+        <div className="flex items-center justify-between sm:justify-start gap-2">
+          <Button variant="ghost" size="sm" onClick={onBackToDraws} className="h-8 gap-1 text-xs px-2">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Button>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="font-semibold text-xs bg-muted">
-              Match #{umpireMatch.matchNumber}
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant="outline" className="font-semibold text-[10px] md:text-xs bg-muted">
+              M#{umpireMatch.matchNumber}
             </Badge>
-            <span className="text-xs font-semibold text-foreground">
+            <span className="text-[11px] md:text-xs font-semibold text-foreground">
               {umpireMatch.roundName}
             </span>
             {umpireMatch.courtNumber && (
-              <Badge className="bg-emerald-600 text-white text-[10px]">
+              <Badge className="bg-emerald-600 text-white text-[9px] md:text-[10px] px-1.5 h-4">
                 Court {umpireMatch.courtNumber}
               </Badge>
             )}
           </div>
         </div>
 
-        {/* Change Match Dropdown */}
-        <div className="flex items-center gap-2">
+        {/* Layout toggle (mobile) & Switch Match */}
+        <div className="flex items-center justify-between sm:justify-end gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMobileLayout(mobileLayout === 'stack' ? 'grid' : 'stack')}
+            className="h-8 px-2 text-xs md:hidden gap-1 text-muted-foreground"
+            title="Toggle Mobile Layout"
+          >
+            {mobileLayout === 'stack' ? (
+              <>
+                <Columns className="h-3.5 w-3.5" /> Split
+              </>
+            ) : (
+              <>
+                <Rows className="h-3.5 w-3.5" /> Stack
+              </>
+            )}
+          </Button>
+
           <Select value={umpireMatch.id} onValueChange={(id: string | null) => setUmpireMatchId(id)}>
-            <SelectTrigger className="h-8 w-[180px] text-xs">
+            <SelectTrigger className="h-8 w-full sm:w-[170px] text-xs">
               <SelectValue placeholder="Switch match" />
             </SelectTrigger>
             <SelectContent>
@@ -152,63 +169,70 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
       </div>
 
       {/* Main Scoreboard Display */}
-      <Card className="border shadow-lg overflow-hidden bg-gradient-to-b from-card to-muted/20">
-        <CardContent className="p-6 md:p-8 space-y-6">
+      <Card className="border shadow-md overflow-hidden bg-card">
+        <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
           {/* Status Bar */}
-          <div className="flex items-center justify-between pb-3 border-b text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span className="font-bold uppercase tracking-wider text-foreground">
+          <div className="flex items-center justify-between pb-3 border-b text-xs text-muted-foreground flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold uppercase tracking-wider text-foreground text-xs md:text-sm">
                 Game {currentSetNum} of 3
               </span>
               {gameStatus.isDeuce && (
-                <Badge variant="destructive" className="animate-pulse text-[10px]">
+                <Badge variant="destructive" className="animate-pulse text-[9px] md:text-[10px]">
                   DEUCE (Lead by 2 / Cap 30)
                 </Badge>
               )}
               {gameStatus.isInterval && (
-                <Badge className="bg-amber-500 text-white text-[10px]">
+                <Badge className="bg-amber-500 text-white text-[9px] md:text-[10px]">
                   11-PT INTERVAL (60s Rest)
                 </Badge>
               )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-[11px]">
-                Sets Won: <strong className="text-foreground">{matchStatus.setsWon.p1} - {matchStatus.setsWon.p2}</strong>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] md:text-xs">
+                Sets:{' '}
+                <strong className="text-foreground">
+                  {matchStatus.setsWon.p1} - {matchStatus.setsWon.p2}
+                </strong>
               </span>
             </div>
           </div>
 
-          {/* Player Columns */}
-          <div className="grid grid-cols-2 gap-4 md:gap-8">
+          {/* Player Scoring Cards (Responsive: Stack on mobile or 2-column) */}
+          <div
+            className={`grid gap-3 sm:gap-6 ${
+              mobileLayout === 'stack' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-2'
+            }`}
+          >
             {/* Player 1 Side */}
             <div
-              className={`rounded-2xl border-2 p-6 flex flex-col justify-between transition-all ${
+              className={`rounded-xl sm:rounded-2xl border-2 p-4 sm:p-6 flex flex-col justify-between transition-all ${
                 server === 1
-                  ? 'border-emerald-500 bg-emerald-50/40 shadow-md'
+                  ? 'border-emerald-500 bg-emerald-50/40 shadow-sm'
                   : 'border-border bg-card'
               }`}
             >
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                  <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-emerald-800">
                     Side 1
                   </span>
                   {server === 1 && (
-                    <Badge className="bg-emerald-600 text-white text-[10px] gap-1">
-                      <Sparkles className="h-2.5 w-2.5" /> SERVING
+                    <Badge className="bg-emerald-600 text-white text-[9px] md:text-[10px] gap-1 py-0 h-4">
+                      <Sparkles className="h-2.5 w-2.5" /> SERVE
                     </Badge>
                   )}
                 </div>
-                <h3 className="text-base md:text-xl font-extrabold tracking-tight truncate">
+                <h3 className="text-sm sm:text-base md:text-xl font-bold tracking-tight truncate">
                   {p1Name}
                 </h3>
-                <p className="text-xs text-muted-foreground truncate">{p1Club}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground truncate">{p1Club}</p>
               </div>
 
               {/* Big Score Number */}
-              <div className="my-6 text-center">
-                <span className="text-6xl md:text-8xl font-black font-mono tracking-tighter text-foreground select-none">
+              <div className="my-3 sm:my-6 text-center">
+                <span className="text-5xl sm:text-7xl md:text-8xl font-black font-mono tracking-tighter text-foreground select-none">
                   {currentGame.p1}
                 </span>
               </div>
@@ -217,7 +241,7 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
               <Button
                 size="lg"
                 disabled={umpireMatch.status === 'finished'}
-                className="w-full h-14 md:h-16 text-lg md:text-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md active:scale-98 transition-transform"
+                className="w-full h-12 sm:h-14 md:h-16 text-base sm:text-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs active:scale-98 transition-transform"
                 onClick={() => addPoint(umpireMatch.id, 1)}
               >
                 +1 POINT ({p1Name.split(' ')[0]})
@@ -226,32 +250,32 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
 
             {/* Player 2 Side */}
             <div
-              className={`rounded-2xl border-2 p-6 flex flex-col justify-between transition-all ${
+              className={`rounded-xl sm:rounded-2xl border-2 p-4 sm:p-6 flex flex-col justify-between transition-all ${
                 server === 2
-                  ? 'border-emerald-500 bg-emerald-50/40 shadow-md'
+                  ? 'border-emerald-500 bg-emerald-50/40 shadow-sm'
                   : 'border-border bg-card'
               }`}
             >
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                  <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-emerald-800">
                     Side 2
                   </span>
                   {server === 2 && (
-                    <Badge className="bg-emerald-600 text-white text-[10px] gap-1">
-                      <Sparkles className="h-2.5 w-2.5" /> SERVING
+                    <Badge className="bg-emerald-600 text-white text-[9px] md:text-[10px] gap-1 py-0 h-4">
+                      <Sparkles className="h-2.5 w-2.5" /> SERVE
                     </Badge>
                   )}
                 </div>
-                <h3 className="text-base md:text-xl font-extrabold tracking-tight truncate">
+                <h3 className="text-sm sm:text-base md:text-xl font-bold tracking-tight truncate">
                   {p2Name}
                 </h3>
-                <p className="text-xs text-muted-foreground truncate">{p2Club}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground truncate">{p2Club}</p>
               </div>
 
               {/* Big Score Number */}
-              <div className="my-6 text-center">
-                <span className="text-6xl md:text-8xl font-black font-mono tracking-tighter text-foreground select-none">
+              <div className="my-3 sm:my-6 text-center">
+                <span className="text-5xl sm:text-7xl md:text-8xl font-black font-mono tracking-tighter text-foreground select-none">
                   {currentGame.p2}
                 </span>
               </div>
@@ -260,7 +284,7 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
               <Button
                 size="lg"
                 disabled={umpireMatch.status === 'finished'}
-                className="w-full h-14 md:h-16 text-lg md:text-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md active:scale-98 transition-transform"
+                className="w-full h-12 sm:h-14 md:h-16 text-base sm:text-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs active:scale-98 transition-transform"
                 onClick={() => addPoint(umpireMatch.id, 2)}
               >
                 +1 POINT ({p2Name.split(' ')[0]})
@@ -268,21 +292,21 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
             </div>
           </div>
 
-          {/* Service Direction & Umpire Helper */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-muted/50 border text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Service Court:</span>
-              <Badge variant="secondary" className="font-semibold text-foreground">
+          {/* Service Direction & Umpire Controls Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-xl bg-muted/40 border text-xs">
+            <div className="flex items-center gap-2 text-[11px] md:text-xs">
+              <span className="text-muted-foreground">Serving Box:</span>
+              <Badge variant="secondary" className="font-semibold text-foreground text-[10px]">
                 {serviceCourt}
               </Badge>
             </div>
 
             {/* Change Server / Undo Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5"
+                className="h-8 text-xs flex-1 sm:flex-none"
                 onClick={() => setMatchServer(umpireMatch.id, server === 1 ? 2 : 1)}
               >
                 Toggle Server
@@ -290,25 +314,25 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5 border-rose-200 text-rose-700 hover:bg-rose-50"
+                className="h-8 text-xs flex-1 sm:flex-none border-rose-200 text-rose-700 hover:bg-rose-50 gap-1"
                 onClick={() => undoPoint(umpireMatch.id)}
               >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Undo Point
+                <RotateCcw className="h-3 w-3" />
+                Undo
               </Button>
             </div>
           </div>
 
           {/* Game Sets Summary Bar */}
-          <div className="p-3 bg-card border rounded-lg flex items-center justify-between text-xs">
-            <span className="font-semibold text-muted-foreground">Previous Sets:</span>
-            <div className="flex items-center gap-3 font-mono">
+          <div className="p-3 bg-muted/20 border rounded-lg flex items-center justify-between text-xs flex-wrap gap-2">
+            <span className="font-semibold text-muted-foreground text-[11px]">Sets History:</span>
+            <div className="flex items-center gap-2 font-mono flex-wrap">
               {umpireMatch.score.games.map((g, i) => (
                 <div
                   key={i}
-                  className={`px-3 py-1 rounded border text-xs ${
+                  className={`px-2.5 py-0.5 rounded border text-[11px] ${
                     i === currentSetIdx
-                      ? 'bg-emerald-100/60 border-emerald-300 font-bold text-emerald-950'
+                      ? 'bg-emerald-100/70 border-emerald-300 font-bold text-emerald-950'
                       : 'bg-muted/40 font-medium'
                   }`}
                 >
@@ -318,25 +342,25 @@ export function UmpireConsole({ onBackToDraws }: UmpireConsoleProps) {
             </div>
           </div>
 
-          {/* Match Finished Notification */}
+          {/* Match Finished Banner */}
           {umpireMatch.status === 'finished' && (
-            <div className="p-4 rounded-xl bg-emerald-50 border-2 border-emerald-500 text-emerald-950 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-8 w-8 text-emerald-600 shrink-0" />
+            <div className="p-4 rounded-xl bg-emerald-50 border-2 border-emerald-500 text-emerald-950 flex flex-col sm:flex-row items-center justify-between shadow-xs gap-3">
+              <div className="flex items-center gap-2.5 text-center sm:text-left">
+                <Trophy className="h-7 w-7 text-emerald-600 shrink-0" />
                 <div>
-                  <h4 className="font-bold text-base">Match Completed!</h4>
-                  <p className="text-xs text-emerald-800">
+                  <h4 className="font-bold text-sm">Match Completed!</h4>
+                  <p className="text-[11px] text-emerald-800">
                     Winner:{' '}
                     <strong>
                       {umpireMatch.winnerId === umpireMatch.entry1?.id ? p1Name : p2Name}
                     </strong>{' '}
-                    has been advanced to the next round in the tournament bracket.
+                    advanced to the next round.
                   </p>
                 </div>
               </div>
               <Button
                 onClick={onBackToDraws}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 w-full sm:w-auto"
               >
                 View in Bracket
               </Button>

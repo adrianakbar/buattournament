@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Check, FileDown, Flame, Shuffle, Trophy, Tv, Users } from 'lucide-react';
+import { Check, FileDown, Flame, Shuffle, ArrowRightLeft } from 'lucide-react';
 
 interface BracketViewerProps {
   onOpenUmpire: (matchId: string) => void;
@@ -41,10 +41,10 @@ export function BracketViewer({
     activeEvent,
     assignCourt,
     setMatchStatus,
-    finishMatchManually,
   } = useTournament();
 
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [mobileRoundFilter, setMobileRoundFilter] = useState<string>('all');
 
   if (!activeEvent) {
     return <div className="p-8 text-center text-muted-foreground">No event found.</div>;
@@ -79,77 +79,136 @@ export function BracketViewer({
     return entry.player1.club;
   };
 
+  const displayedRounds =
+    mobileRoundFilter === 'all'
+      ? sortedRounds
+      : sortedRounds.filter((r) => String(r) === mobileRoundFilter);
+
   return (
-    <div className="space-y-6">
-      {/* Top Header: Categories & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 rounded-xl border shadow-sm">
+    <div className="space-y-4">
+      {/* Top Header Card */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-card p-3 md:p-4 rounded-xl border shadow-xs">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold tracking-tight">{activeEvent.name}</h2>
-            <Badge variant="secondary" className="text-xs">
-              {activeEvent.bracketSize}-Player Draw
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-base md:text-xl font-bold tracking-tight">
+              {activeEvent.name}
+            </h2>
+            <Badge variant="secondary" className="text-[10px] md:text-xs">
+              {activeEvent.bracketSize} Draw
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground">
-            BWF Knockout Single Elimination • {activeEvent.entries.length} registered entries
+          <p className="text-[11px] md:text-xs text-muted-foreground">
+            BWF Single Elimination • {activeEvent.entries.length} entries registered
           </p>
         </div>
 
-        {/* Category Tabs & Draw Generator */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Tabs value={selectedEventId} onValueChange={setSelectedEventId}>
-            <TabsList className="h-9">
-              {tournament.events.map((evt) => (
-                <TabsTrigger key={evt.id} value={evt.id} className="text-xs px-3">
-                  {evt.category}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Category Switcher */}
+          <div className="overflow-x-auto no-scrollbar">
+            <Tabs value={selectedEventId} onValueChange={setSelectedEventId}>
+              <TabsList className="h-8 md:h-9">
+                {tournament.events.map((evt) => (
+                  <TabsTrigger key={evt.id} value={evt.id} className="text-xs px-2.5">
+                    {evt.category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenGenerateDraw}
-            className="text-xs h-9 gap-1.5 border-emerald-600/30 text-emerald-700 hover:bg-emerald-50"
-          >
-            <Shuffle className="h-3.5 w-3.5" />
-            Re-seed & Draw
-          </Button>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenGenerateDraw}
+              className="text-xs h-8 md:h-9 flex-1 sm:flex-none gap-1 border-emerald-600/30 text-emerald-700 hover:bg-emerald-50 font-medium"
+            >
+              <Shuffle className="h-3.5 w-3.5" />
+              Re-seed & Draw
+            </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenExportPdf}
-            className="text-xs h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-xs"
-          >
-            <FileDown className="h-3.5 w-3.5" />
-            Export PDF
-          </Button>
+            <Button
+              size="sm"
+              onClick={onOpenExportPdf}
+              className="text-xs h-8 md:h-9 flex-1 sm:flex-none gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-xs"
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              Export PDF
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Bracket Tree Container */}
-      <div className="overflow-x-auto pb-8 pt-2">
-        <div className="flex gap-8 min-w-max px-2">
+      {/* Mobile Round Segmented Selector (visible only on mobile) */}
+      <div className="block md:hidden bg-muted/40 p-1.5 rounded-lg border">
+        <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+          <Button
+            variant={mobileRoundFilter === 'all' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setMobileRoundFilter('all')}
+            className="text-[11px] h-7 px-2.5 shrink-0 rounded-md"
+          >
+            All Tree
+          </Button>
           {sortedRounds.map((roundNum) => {
+            const matches = matchesByRound[roundNum] || [];
+            const title = matches[0]?.roundName || `R${roundNum}`;
+            const isSelected = mobileRoundFilter === String(roundNum);
+
+            return (
+              <Button
+                key={roundNum}
+                variant={isSelected ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setMobileRoundFilter(String(roundNum))}
+                className="text-[11px] h-7 px-2 shrink-0 rounded-md truncate max-w-[110px]"
+              >
+                {title}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Mobile Swipe Hint when in 'All Tree' view */}
+      {mobileRoundFilter === 'all' && (
+        <div className="flex md:hidden items-center justify-center gap-1 text-[11px] text-muted-foreground py-0.5">
+          <ArrowRightLeft className="h-3 w-3" />
+          <span>Swipe horizontally to navigate rounds</span>
+        </div>
+      )}
+
+      {/* Bracket Tree Container */}
+      <div className="overflow-x-auto pb-6 pt-1 -mx-3 px-3 md:mx-0 md:px-0">
+        <div
+          className={`flex gap-4 md:gap-8 ${
+            mobileRoundFilter === 'all' ? 'min-w-max' : 'w-full max-w-lg mx-auto'
+          }`}
+        >
+          {displayedRounds.map((roundNum) => {
             const matches = matchesByRound[roundNum] || [];
             const roundTitle = matches[0]?.roundName || `Round ${roundNum}`;
 
             return (
-              <div key={roundNum} className="w-[300px] flex flex-col">
+              <div
+                key={roundNum}
+                className={`${
+                  mobileRoundFilter === 'all' ? 'w-[260px] md:w-[300px]' : 'w-full'
+                } flex flex-col`}
+              >
                 {/* Round Title */}
-                <div className="text-center mb-4 sticky top-16 z-10 bg-background/90 backdrop-blur py-1.5 rounded-md border shadow-xs">
-                  <span className="font-semibold text-xs tracking-wider uppercase text-muted-foreground">
+                <div className="text-center mb-3 sticky top-14 md:top-16 z-10 bg-background/90 backdrop-blur py-1.5 rounded-md border shadow-xs">
+                  <span className="font-bold text-[11px] md:text-xs tracking-wider uppercase text-muted-foreground">
                     {roundTitle}
                   </span>
-                  <span className="text-[11px] text-muted-foreground/70 ml-1.5">
+                  <span className="text-[10px] md:text-[11px] text-muted-foreground/70 ml-1">
                     ({matches.length} {matches.length === 1 ? 'Match' : 'Matches'})
                   </span>
                 </div>
 
                 {/* Match Cards in this round */}
-                <div className="flex flex-col justify-around flex-grow gap-6">
+                <div className="flex flex-col justify-around flex-grow gap-3 md:gap-6">
                   {matches.map((match) => {
                     const isLive = match.status === 'live';
                     const isFinished = match.status === 'finished';
@@ -162,30 +221,33 @@ export function BracketViewer({
                       <div key={match.id} className="relative group">
                         <Card
                           onClick={() => setSelectedMatch(match)}
-                          className={`cursor-pointer transition-all duration-150 hover:shadow-md border text-xs overflow-hidden ${
+                          className={`cursor-pointer transition-all duration-150 active:scale-99 hover:shadow-md border text-xs overflow-hidden ${
                             isLive
                               ? 'ring-2 ring-emerald-500 shadow-sm border-emerald-300'
                               : 'hover:border-muted-foreground/40'
                           }`}
                         >
                           {/* Match Header Bar */}
-                          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b text-[11px] text-muted-foreground font-medium">
+                          <div className="flex items-center justify-between px-2.5 py-1 bg-muted/40 border-b text-[10px] md:text-[11px] text-muted-foreground font-medium">
                             <span className="font-semibold text-foreground/80">
                               M#{match.matchNumber}
                             </span>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1">
                               {match.courtNumber && (
-                                <Badge variant="outline" className="h-4 px-1 text-[10px] bg-background">
-                                  Court {match.courtNumber}
+                                <Badge variant="outline" className="h-4 px-1 text-[9px] bg-background">
+                                  C{match.courtNumber}
                                 </Badge>
                               )}
                               {isLive && (
-                                <Badge variant="destructive" className="h-4 px-1.5 text-[9px] font-bold tracking-wide animate-pulse">
+                                <Badge
+                                  variant="destructive"
+                                  className="h-3.5 px-1 text-[8px] md:text-[9px] font-bold tracking-wide animate-pulse"
+                                >
                                   LIVE
                                 </Badge>
                               )}
                               {isBye && (
-                                <Badge variant="secondary" className="h-4 px-1 text-[9px]">
+                                <Badge variant="secondary" className="h-3.5 px-1 text-[8px]">
                                   BYE
                                 </Badge>
                               )}
@@ -195,7 +257,7 @@ export function BracketViewer({
                           <CardContent className="p-0 divide-y">
                             {/* Player 1 Row */}
                             <div
-                              className={`flex items-center justify-between px-3 py-2.5 transition-colors ${
+                              className={`flex items-center justify-between px-2.5 py-2 transition-colors ${
                                 p1Won
                                   ? 'bg-emerald-50/70 font-semibold text-emerald-950'
                                   : p2Won
@@ -203,39 +265,43 @@ export function BracketViewer({
                                   : ''
                               }`}
                             >
-                              <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5 min-w-0 pr-1.5">
                                 {match.entry1?.seed && (
-                                  <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                  <span className="flex-shrink-0 text-[9px] font-bold px-1 rounded bg-amber-100 text-amber-800 border border-amber-200">
                                     [{match.entry1.seed}]
                                   </span>
                                 )}
                                 <div className="truncate">
-                                  <div className="truncate">{formatPlayerName(match.entry1)}</div>
-                                  <div className="text-[10px] text-muted-foreground truncate font-normal">
+                                  <div className="truncate font-medium text-[11px] md:text-xs">
+                                    {formatPlayerName(match.entry1)}
+                                  </div>
+                                  <div className="text-[9px] text-muted-foreground truncate font-normal">
                                     {formatPlayerClub(match.entry1)}
                                   </div>
                                 </div>
                               </div>
 
                               {/* Scores */}
-                              <div className="flex items-center gap-1.5 font-mono text-xs shrink-0">
+                              <div className="flex items-center gap-1 font-mono text-[11px] md:text-xs shrink-0">
                                 {match.score.games.map((g, i) => (
                                   <span
                                     key={i}
-                                    className={`w-5 text-center ${
-                                      g.p1 > g.p2 ? 'font-bold text-foreground' : 'text-muted-foreground'
+                                    className={`w-4 md:w-5 text-center ${
+                                      g.p1 > g.p2
+                                        ? 'font-bold text-foreground'
+                                        : 'text-muted-foreground'
                                     }`}
                                   >
                                     {g.p1}
                                   </span>
                                 ))}
-                                {p1Won && <Check className="h-3.5 w-3.5 text-emerald-600 ml-0.5" />}
+                                {p1Won && <Check className="h-3 w-3 text-emerald-600 ml-0.5" />}
                               </div>
                             </div>
 
                             {/* Player 2 Row */}
                             <div
-                              className={`flex items-center justify-between px-3 py-2.5 transition-colors ${
+                              className={`flex items-center justify-between px-2.5 py-2 transition-colors ${
                                 p2Won
                                   ? 'bg-emerald-50/70 font-semibold text-emerald-950'
                                   : p1Won
@@ -243,33 +309,37 @@ export function BracketViewer({
                                   : ''
                               }`}
                             >
-                              <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5 min-w-0 pr-1.5">
                                 {match.entry2?.seed && (
-                                  <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                  <span className="flex-shrink-0 text-[9px] font-bold px-1 rounded bg-amber-100 text-amber-800 border border-amber-200">
                                     [{match.entry2.seed}]
                                   </span>
                                 )}
                                 <div className="truncate">
-                                  <div className="truncate">{formatPlayerName(match.entry2)}</div>
-                                  <div className="text-[10px] text-muted-foreground truncate font-normal">
+                                  <div className="truncate font-medium text-[11px] md:text-xs">
+                                    {formatPlayerName(match.entry2)}
+                                  </div>
+                                  <div className="text-[9px] text-muted-foreground truncate font-normal">
                                     {formatPlayerClub(match.entry2)}
                                   </div>
                                 </div>
                               </div>
 
                               {/* Scores */}
-                              <div className="flex items-center gap-1.5 font-mono text-xs shrink-0">
+                              <div className="flex items-center gap-1 font-mono text-[11px] md:text-xs shrink-0">
                                 {match.score.games.map((g, i) => (
                                   <span
                                     key={i}
-                                    className={`w-5 text-center ${
-                                      g.p2 > g.p1 ? 'font-bold text-foreground' : 'text-muted-foreground'
+                                    className={`w-4 md:w-5 text-center ${
+                                      g.p2 > g.p1
+                                        ? 'font-bold text-foreground'
+                                        : 'text-muted-foreground'
                                     }`}
                                   >
                                     {g.p2}
                                   </span>
                                 ))}
-                                {p2Won && <Check className="h-3.5 w-3.5 text-emerald-600 ml-0.5" />}
+                                {p2Won && <Check className="h-3 w-3 text-emerald-600 ml-0.5" />}
                               </div>
                             </div>
                           </CardContent>
@@ -287,35 +357,35 @@ export function BracketViewer({
       {/* Match Quick Actions Modal */}
       {selectedMatch && (
         <Dialog open={!!selectedMatch} onOpenChange={(open) => !open && setSelectedMatch(null)}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] sm:max-w-md p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
+              <DialogTitle className="flex items-center justify-between text-base">
                 <span>Match #{selectedMatch.matchNumber}</span>
                 <Badge variant={selectedMatch.status === 'live' ? 'destructive' : 'secondary'}>
                   {selectedMatch.status.toUpperCase()}
                 </Badge>
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs">
                 {selectedMatch.roundName} • {activeEvent.name}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-3">
+            <div className="space-y-4 py-2">
               {/* Matchup Summary */}
-              <div className="p-3 rounded-lg bg-muted/50 border space-y-2">
+              <div className="p-3 rounded-lg bg-muted/50 border space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <div className="font-medium text-sm">
+                  <div className="font-semibold truncate max-w-[200px]">
                     {formatPlayerName(selectedMatch.entry1)}
                   </div>
                   <div className="font-mono font-bold">
                     {selectedMatch.score.games.map((g) => g.p1).join(' - ')}
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground text-center font-semibold uppercase tracking-wider">
+                <div className="text-[10px] text-muted-foreground text-center font-bold uppercase tracking-wider">
                   VS
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="font-medium text-sm">
+                  <div className="font-semibold truncate max-w-[200px]">
                     {formatPlayerName(selectedMatch.entry2)}
                   </div>
                   <div className="font-mono font-bold">
@@ -329,8 +399,8 @@ export function BracketViewer({
                 <label className="text-xs font-semibold text-muted-foreground">Assign Court</label>
                 <Select
                   value={selectedMatch.courtNumber ? String(selectedMatch.courtNumber) : 'none'}
-                  onValueChange={(val) => {
-                    const num = val === 'none' ? null : Number(val);
+                  onValueChange={(val: string | null) => {
+                    const num = val === 'none' || val === null ? null : Number(val);
                     assignCourt(selectedMatch.id, num);
                     setSelectedMatch({ ...selectedMatch, courtNumber: num });
                   }}
@@ -356,7 +426,7 @@ export function BracketViewer({
                   <Button
                     variant={selectedMatch.status === 'upcoming' ? 'default' : 'outline'}
                     size="sm"
-                    className="text-xs"
+                    className="text-xs h-8"
                     onClick={() => {
                       setMatchStatus(selectedMatch.id, 'upcoming');
                       setSelectedMatch({ ...selectedMatch, status: 'upcoming' });
@@ -367,7 +437,7 @@ export function BracketViewer({
                   <Button
                     variant={selectedMatch.status === 'live' ? 'destructive' : 'outline'}
                     size="sm"
-                    className="text-xs"
+                    className="text-xs h-8"
                     onClick={() => {
                       setMatchStatus(selectedMatch.id, 'live');
                       setSelectedMatch({ ...selectedMatch, status: 'live' });
@@ -378,7 +448,7 @@ export function BracketViewer({
                   <Button
                     variant={selectedMatch.status === 'finished' ? 'secondary' : 'outline'}
                     size="sm"
-                    className="text-xs"
+                    className="text-xs h-8"
                     onClick={() => {
                       setMatchStatus(selectedMatch.id, 'finished');
                       setSelectedMatch({ ...selectedMatch, status: 'finished' });
@@ -392,7 +462,7 @@ export function BracketViewer({
               {/* Open Umpire Console Button */}
               <div className="pt-2">
                 <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-medium"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold text-xs h-10"
                   onClick={() => {
                     onOpenUmpire(selectedMatch.id);
                     setSelectedMatch(null);
